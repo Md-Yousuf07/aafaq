@@ -1,0 +1,414 @@
+---
+title: "TravelBehaviour"
+author: "Sikandar Aafaq Azhan  Mudassir"
+date: "11/21/2021"
+output: 
+      html_document:
+         df_print: kable
+         theme: lumen
+         toc: yes
+         toc_float: yes
+         code_folding: hide
+         highlight: zenburn
+---
+<style>
+#TOC {
+  font-size: 18px;
+  font-family: Bookman Old Style;
+  color: darkgreen; 
+}
+p {
+    font-size: 18px;
+    font-family: Bookman Old Style;
+    line-height: 24px;
+    margin: 0px 0px 12px 0px;
+    text-align:justify;
+}
+h1 {
+    text-align: center;
+    font-family: Bookman Old Style;
+    font-size: 24px;
+    font-weight: bold;
+    color: maroon;
+}
+h2, h3, h4, h5, h6, legend {
+    font-family: Bookman Old Style;
+    font-size: 18px;
+    font-weight: bold;
+    color: darkblue;
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = F,warning = F,comment = "")
+```
+
+```{r , out.width='100%'}
+knitr::include_graphics('D:/aafaq/rstudio exersice/travel app/www./travelbehaviour.png')
+```
+
+# Introduction
+
+The aim of this project is to identify various preferences of travelers along with their nature and budget for travel. We shall try to model their budget for next travel so that it can be predicted for new traveler. We are using Travel Behavior data for analysis. This data is collected through Google form.
+The data set has 16 variable and 318 responses . 
+
+```{r, out.width='100%'}
+knitr::include_graphics("D:/aafaq/datascience/analysisplain/analysisplain.png")
+
+```
+
+ 
+ 
+# Attribute Information
+
+1. Times stamp- Time when the data is collected 
+
+1. Name - Name of the traveler
+
+1. Age - Age of the traveler 
+
+1. Gender - Gender of the traveler
+
+1. Mode of transport - Transport preference of traveler
+
+1. Adults travelling - Describe how many adults are traveling 
+
+1. Children travelling - Describe how many children traveling
+
+1. place preference -  Place preference of stay
+
+1. No of days - Total number of days staying and traveling
+
+1. Reason for traveling -  Reason for traveling
+
+1. Month of traveling  -  Which month traveler usually travels
+
+1. Traveler Type -  Category of traveler 
+
+1. Type of Accommodation -  Type of accommodation which traveler prefers 
+
+1. Overall Budget - Overall budget  of a traveler for next trip
+
+1. Previous Budget - Money spent on previous trip 
+
+1. Hotel Room preference - Hotel room preference of the traveler
+
+
+
+```{r}
+Tb=read.csv("D:/aafaq/datascience/Travelbehaviour.csv",header=T)
+
+```
+
+
+# Loading Library
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(ggpubr)
+library(corrplot)
+library(ggridges)
+library(Metrics)
+library(e1071)
+library(randomForest)
+library(GGally)
+library(kableExtra)
+```
+
+# Meta Data
+
+```{r}
+library(kableExtra)
+Tb1=1:16
+Tb2=as.vector(names(Tb))
+Tb3=c("Nil","Nil","scatter/Box/Histogaram","bar/pie","bar/pie","bar/pie","bar/pie","bar/pie","bar/pie","scatter/box/histogram","bar/pie","bar/pie","bar/pie","bar/pie","bar/pie","scatter/Box/Histogaram")
+Tb4=c("Time","Nil","Mean/Median/Percentile", "count/proportion","count/proportion",
+"count/proportion","count/proportion","count/proportion","count/proportion","Mean/Median/percentile","count/proportion","count/proportion","count/proportion","count/proportion","count/proportion","Mean/Median/Percentile")
+Tb5=c("time","char","num","factor","factor","factor","factor","factor","factor","num","factor","factor","factor","factor","factor","num")
+meda=as.data.frame(cbind(Tb1,Tb2,Tb3,Tb4,Tb5))
+colnames(meda)=c("SNo","Variables","Visual summary","Numerical summary","Type")
+kable(rbind(meda)) %>%   kable_styling()
+
+```
+
+# Data prepration
+
+## Creating new variable
+
+```{r}
+Tb=Tb %>% mutate(Reason_Travel=case_when(Reason.for.travel %in% c("Umrah",
+                                                             "Family Vacation",
+                                                             "Getaway(Vacation)",
+                                                             "Bachelor ",
+                                                             "Honeymoon",
+                                                             "Family vacation is best and it's get a chance to adore Nature to see the creation of Allah ",
+                                                             "Valentine's Day",
+                                                             "Marriage ")~"personal",
+                                    Reason.for.travel %in% c("With friends.. ",
+                                                             "Friends (vacation)",
+                                                             "Friends vacation",
+                                                             "Travel with friends",
+                                                             "Bike rides",
+                                                             "Trips",
+                                                             "With friends ")~"Friends",
+                                    Reason.for.travel %in% c("Business",
+                                                             "Job",
+                                                             "Education",
+                                                             "Flim Shouting ",
+                                                             "Flim shouting",
+                                                             "Coaching",
+                                                             "Sports",
+                                                             "Coach",
+                                                             "Flim Shooting ")~"professional"))
+
+```
+
+***In the variable Reason for travel we have observed that it is having 24 categories so we have classified into three categories such Professional,Personal & Friends*** 
+
+
+
+```{r}
+Tb$Mode.of.transport=gsub("Flight ","Flight",Tb$Mode.of.transport,ignore.case=T)
+```
+ 
+ ***In the variable Mode of transport we found that "Flight" option has been mentioned twice so we changed to it to single by using the code given below***
+
+```{r}
+Tb=Tb %>% mutate(Season_Travel=case_when(Month.Of.Travel=="January-February"~"winter",
+                               Month.Of.Travel=="January-February"~"winter",
+                               Month.Of.Travel=="November-December"~"winter",
+                               Month.Of.Travel=="September-October"~"rain",
+                               Month.Of.Travel=="September-October"~"rain",
+                               Month.Of.Travel=="Feburay-March "~"spring",
+                               Month.Of.Travel=="Feburay-March"~"spring",
+                               Month.Of.Travel=="May-June"~"rain" ,
+                               Month.Of.Travel==" March-April"~"summer",
+                               Month.Of.Travel=="July-August" ~"spring",
+                               Month.Of.Travel=="March-April"~"summer"))
+```
+
+***In variable Month of travel there are repeated   values in months so we changed that to four  such as summer , spring , rain &  winter***
+
+***To reduce variability in  target variable we are  filtering over all budget having minimum Rs 1000 maximum Rs 100000***
+
+***one unit of previous budget and overall budget represent 1000 rs***
+
+```{r}
+Tb=Tb %>% filter(Over.all.Budget>1000&Over.all.Budget<=100000)
+Tb$previous.budget=Tb$previous.budget/1000
+Tb$Over.all.Budget=Tb$Over.all.Budget/1000
+```
+
+ ***In the variable Hotel.Room.Preference we found that "Roll- Away"  option has been mentioned wrongly so we changed to it to single by using the code given below***
+
+
+```{r}
+Tb=Tb %>% mutate(Hotel.Room.Preference=replace(Hotel.Room.Preference,Hotel.Room.Preference=="Roll- Away","Roll- Away Bed"))
+```
+
+ ***In the variable No.of.Adults we found that  "5" option has been mentioned mistaken so we changed to it to single by using the code given below***
+
+```{r}
+Tb=Tb %>% mutate(No.of.Adults=replace(No.of.Adults,No.of.Adults=="5","More than 4"))
+```
+
+
+```{r}
+a=sum(is.na(Tb))
+b=data.frame(cbind(var_names=names(Tb),na_val=a),row.names = NULL)
+kbl(a)
+```
+
+***The data set does not contain any missing value & it is cleaned in a suitable way for the analysis***
+
+# Converting variable into factor
+
+```{r}
+Tb$Gender=as.factor(Tb$Gender)
+Tb$Mode.of.transport=as.factor(Tb$Mode.of.transport)
+Tb$Reason.for.travel=as.factor(Tb$Reason.for.travel)
+Tb$Month.Of.Travel=as.factor(Tb$Month.Of.Travel)
+Tb$Traveler.Type=as.factor(Tb$Traveler.Type)
+Tb$Type.of.accommodation=as.factor(Tb$Type.of.accommodation)
+Tb$Hotel.Room.Preference=as.factor(Tb$Hotel.Room.Preference)
+Tb$No.of.Adults=as.factor(Tb$No.of.Adults)
+Tb$No.of.childrens=as.factor(Tb$No.of.childrens)
+Tb$Place.preference=as.factor(Tb$Place.preference)
+Tb$No.of.days=as.factor(Tb$No.of.days)
+Tb$Reason_Travel=as.factor(Tb$Reason_Travel)
+Tb$Season_Travel=as.factor(Tb$Season_Travel)
+```
+
+# Numerical Summary 
+
+***A numerical summary is a number used to describe a specific characteristic about a data set.***
+
+***We will go over the theory and application of the following numerical summaries we have taken mean,median,standard deviation***
+
+1. average - The average adds up all the data values and divides by the total number of values
+
+1.  Median- This is the “middle data point”, where half of the data is below the median and half is above the median.
+
+1. Standard Deviation - Standard deviation is extensively used in statistics and data science. It measures the amount of variation or dispersion of a data set, calculating how spread out the data are from the mean. 
+
+  A "Deviation" is defined as the distance an observation lies from the reference point.
+
+1. Minimum -   find the minimum value of data 
+
+1. Maximum -   find the maximum value of data
+ 
+
+# Modeling 
+
+***Modeling is done for all the predictor variables . there are two types in model white box and black box model.***
+
+# White Box
+
+***In white box model,we can see the coefficients or weights of the predictors. we are using linear model .***
+
+```{r echo=FALSE}
+Tb$age_11=scale(Tb$Age,center = T,scale = F)
+Tb$previous.budget=scale(Tb$previous.budget,center = T,scale=F)
+```
+
+```{r}
+set.seed(40)
+```
+
+# Train and Test data
+
+```{r}
+sam1=sample(1:nrow(Tb),size=0.80*nrow(Tb),replace = F)
+tr1_data=Tb[sam1,]
+te1_data=Tb[-sam1,]
+```
+
+
+
+```{r}
+ab1=lm(Over.all.Budget~Type.of.accommodation+age_11+previous.budget+Traveler.Type,data = tr1_data)
+con1=confint(ab1)
+sum1=summary(ab1)
+```
+
+# Confident Interval of Model
+
+```{r}
+kable(con1) %>%   kable_styling()
+```
+
+***In the above model previous budget , age & Type.of.accommodation Standard Rooms are significant rest of the variable are not significant ***
+
+# Linear Model 
+
+***A linear regression is a statistical model that estimate the relationship between a response variable and predictor variables***
+
+```{r}
+coef=ab1$coefficients[c('previous.budget','age_11','Type.of.accommodationStandard Rooms')]
+name=c('previous.budget','age_11','Type.of.accommodationStandardRoom')
+coef
+
+```
+
+
+```{r}
+et_1=predict(ab1,te1_data)
+```
+
+
+On an average, Overall budget is expected to decrease by  16.987  units when Type.of.accommodation Standard Rooms is  compared to Type.of.accommodation Balcony to  (Base level), while other numeric predictors are kept at their respective means
+
+on an average  one unit increase in age is expected to increase overall budget by 0.9413  units
+
+on an average  one unit increase in previous budget is expected to increase overall budget by 0.2223 units
+
+
+#  BLACK BOX Model
+
+***In black box model  we can build the model and predict the response variable but we cannot interpret the model. Among the various black box models here we use SVM and Random forest***
+
+# Random Forest 
+
+***A random forest is a machine learning technique that's used to solve regression and classification problems.***
+
+# SVM- Support Vector Machine 
+
+***Svm stand for  support vector machine. It can solve linear and non linear problems and work well for many practical problems.***
+
+```{r}
+rf=randomForest(Over.all.Budget~age_11+previous.budget+Gender+Season_Travel+Traveler.Type+Type.of.accommodation+Hotel.Room.Preference+No.of.days+Reason_Travel,data=tr1_data)
+sv=svm(Over.all.Budget~Age+Gender+Season_Travel+Traveler.Type+Type.of.accommodation+Hotel.Room.Preference+No.of.days+Reason_Travel+previous.budget,data=tr1_data)
+et_2=predict(rf , te1_data)
+et_3=predict(sv,te1_data)
+```
+
+#  RMSE-Root mean squared error
+
+***RMSE Stands for root mean squared error. The basic idea is to measure how bad/erroneous the model's predictions are when compared to actual observed values.  We always  prefer RMSE Value to be minimum***
+
+```{r}
+rm1=rmse(te1_data$Over.all.Budget,et_1)
+rm2=rmse(te1_data$Over.all.Budget,et_2)
+rm3=rmse(te1_data$Over.all.Budget,et_3)
+```
+
+# Building Model 
+
+```{r}
+line1=1:3
+
+line2=c("Linear Model","Random Forest ","Support Vector Machine")
+
+line3=round(c(rm1,rm2,rm3),4)
+
+meta1=as.data.frame(cbind(line1,line2,line3))
+
+colnames(meta1)=c("SNo","modeling method","rmse")
+
+kable(rbind(meta1)) %>%   kable_styling()
+
+```
+
+***From the above table we can say that out of three models Support Vector machine is  better model since it has lowest error*** 
+
+# Final notes
+
+   From visual summary & Numerical Summary we came to know how preference of traveler affects overall budget and it is  listed  below
+
+1.  Traveler who prefers cruise  is likely to  have high budget 
+
+1. Traveler who travels for professional reason is likely to have high budget
+
+1. Traveler who prefers spring travel is likely to have high budget 
+
+1. Traveler who prefers short notice  travel is likely to have high budget
+
+1.  Traveler who prefers  Whole house is likely to have high budget
+
+1. Traveler who prefers More than five days of stay  is likely to have high budget
+
+1. Traveler who prefers  Suite Room as accommodation is likely to have high budget
+
+1. Traveler who prefers King size bed is likely to have high budget
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="tocify-extend-page" data-unique="tocify-extend-page" style="height: 0;"></div>

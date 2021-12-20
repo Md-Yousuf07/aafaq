@@ -1,0 +1,408 @@
+---
+title: "Portugal Election data 2019"
+author: "Sikandar Aafaq/Mohammed Azhan/Mudassir Ahmed(Team A)"
+date: "10/21/2021"
+output: 
+  html_document:
+         df_print: kable
+         theme: lumen
+         toc: yes
+         toc_float: yes
+         code_folding: hide
+         highlight: zenburn
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,message = F,warning = F,comment = "",cache = T)
+```
+
+<style>
+#TOC {
+  font-size: 16px;
+  font-family: Bookman Old Style;
+  color: blue; 
+}
+p {
+    font-size: 18px;
+    font-family: Bookman Old Style;
+    line-height: 24px;
+    margin: 0px 0px 12px 0px;
+    text-align:justify;
+}
+h1 {
+    text-align: center;
+    font-family: Bookman Old Style;
+    font-size: 24px;
+    font-weight: bold;
+    color: red;
+}
+h2, h3, h4, h5, h6, legend {
+    font-family: Bookman Old Style;
+    font-size: 18px;
+    font-weight: bold;
+    color: darkgreen;
+}
+</style>
+ 
+# Introduction
+ 
+  A data set describing the evolution of results in the Portuguese Parliamentary Elections of October 6th 2019.
+   Concerning the results of the 27 parties involved in the electoral event. 
+    The election held in 21 territories 
+ so we are focusing for how previous and current election results varies each other.
+        we are bringing the difference with Numeric and 
+Visual summary.
+
+# Source of data set
+    
+  ***This Data set is taken from UCI REPOSITORY***
+
+# Attribute Information
+
+1. Time Elapsed (Numeric): Time (minutes) passed since the first data acquisition
+
+1. time (timestamp): Date and time of the data acquisition
+
+1. territoryName (string): Short name of the location (district or nation-wide)
+
+1. totalMandates (numeric): MP's elected at the moment
+
+1. availableMandates (numeric): MP's left to elect at the moment
+
+1. numParishes (numeric): Total number of parishes in this location
+
+1. numParishesApproved (numeric): Number of parishes approved in this location
+
+1. blankVotes (numeric): Number of blank votes
+
+1. blankVotesPercentage (numeric): Percentage of blank votes
+
+1. nullVotes (numeric): Number of null votes
+
+1. nullVotesPercentage (numeric): Percentage of null votes
+
+1. votersPercentage (numeric): Percentage of voters
+
+1. subscribedVoters (numeric): Number of subscribed voters in the location
+
+1. totalVoters (numeric): Percentage of blank votes
+
+1. pre.blankVotes (numeric): Number of blank votes (previous election)
+
+1. pre.blankVotesPercentage (numeric): Percentage of blank votes (previous election)
+
+1. pre.nullVotes (numeric): Number of null votes (previous election)
+
+1. pre.nullVotesPercentage (numeric): Percentage of null votes (previous election)
+
+1. pre.votersPercentage (numeric): Percentage of voters (previous election)
+
+1. pre.subscribedVoters (numeric): Number of subscribed voters in the location (previous election)
+
+1. pre.totalVoters (numeric): Percentage of blank votes (previous election)
+
+1. Party (string): Political Party
+
+1. Mandates (numeric): MP's elected at the moment for the party in a given district
+
+1. Percentage (numeric): Percentage of votes in a party
+
+1. validVotesPercentage (numeric): Percentage of valid votes in a party
+
+1. Votes (numeric):  votes
+
+1. Hondt (numeric): Number of MP's according to the distribution of votes now
+
+1. FinalMandates (numeric): Target: final number of elected MP's in a district/national-level
+
+# Loading packages
+
+```{r}
+library(dplyr)
+library(plotly)
+library(ggplot2)
+library(GGally)
+library(ggpubr)
+library(ggridges)
+library(corrplot)
+```
+
+# Lodaing dataset
+```{r}
+ed=read.csv("D:/aafaq/datascience/ElectionData.csv",header=T)
+
+```
+
+# MetaData
+```{r}
+library(kableExtra)
+ed1=1:28
+ed2=as.vector(names(ed))
+ed3=c("Scatter/Box/Histogaram","Null","Bar/Pie","Scatter/Box/Histogaram","Scatter/Box/Histogaram","Scatter/Box/Histogaram","Scatter/Box/Histogaram","Scatter/Box/Histogaram","Scatter/Box/Histogaram","Scatter/Box/Histogaram","Scatter/Box/Histogaram","Scatter/Box/Histogaram","Scatter/Box/Histogaram","Scatter/Box/Histogaram","Scatter/Box/Histogaram","Scatter/Box/Histogaram","Scatter/Box/Histogaram","Scatter/Box/Histogaram","Scatter/Box/Histogaram","Scatter/Box/Histogaram","Scatter/Box/Histogaram","Bar/Pie","Scatter/Box/Histogaram","Scatter/Box/Histogaram","Scatter/Box/Histogaram","Scatter/Box/Histogaram","Scatter/Box/Histogaram","Scatter/Box/Histogaram")
+ed4=c("Mean/median/mode/percentile","Time","Count/Propotion",
+      "Mean/median/mode/percentile",
+      "Mean/median/mode/percentile","Mean/median/mode/percentile",
+      "Mean/median/mode/percentile","Mean/median/mode/percentile",
+      "Mean/median/mode/percentile","Mean/median/mode/percentile",
+      "Mean/median/mode/percentile","Mean/median/mode/percentile",
+      "Mean/median/mode/percentile","Mean/median/mode/percentile",
+      "Mean/median/mode/percentile","Mean/median/mode/percentile",
+      "Mean/median/mode/percentile","Mean/median/mode/percentile","Mean/median/mode/percentile","Mean/median/mode/percentile","Mean/median/mode/percentile","Count/Propotion","Mean/median/mode/percentile","Mean/median/mode/percentile","Mean/median/mode/percentile",
+      "Mean/median/mode/percentile","Mean/median/mode/percentile","Mean/median/mode/percentile")
+ed5=c("num","time","int/factor","num","num","num","num","num","num","num","num","num","num","num","num","num","num","num","num","num","num","factor","num","num","num","num","num","num")
+meda=as.data.frame(cbind(ed1,ed2,ed3,ed4,ed5))
+colnames(meda)=c("SNo","Variables","Visual summary","numerical summary","Type")
+kable(rbind(meda)) %>%   kable_styling()
+
+```
+
+# Data cleaning
+
+```{r}
+a=colSums(is.na(ed))
+b=data.frame(cbind(var_names=names(ed),na_val=a),row.names = NULL)
+kbl(b)
+```
+
+
+***In territory variable we have 21 territory so we have classified that into Four category given below***
+
+1. North
+
+1. South
+
+1. Central
+
+1. West
+
+```{r}
+ed=ed %>% 
+  mutate(territory_region=case_when(territoryName=="TerritÃ³rio Nacional"~"South",
+territoryName==  "Aveiro"~"North",
+territoryName== "Beja"~"South",
+territoryName== "Braga"~"North",
+                                   territoryName=="BraganÃ§a"~"North",
+territoryName=="Castelo Branco"~"Central",territoryName=="Coimbra"~"Central",
+                                   territoryName=="Ã‰vora"~"South",
+                                   territoryName=="Faro"~"South" ,
+                                   territoryName=="Guarda"~"Central",
+territoryName=="Leiria" ~"Central",
+                                   territoryName=="Lisboa"~"West",
+                                   territoryName=="Madeira"~"North",
+                                   territoryName=="Portalegre"~"South",
+                                   territoryName=="Porto"~"North",
+                                  territoryName=="SantarÃ©m"~"North",
+                                  territoryName=="SetÃºbal"~"South",                 territoryName=="Viana do Castelo"~"North",
+  territoryName=="Vila Real"~"North",
+                                  territoryName=="Viseu"~"Central",
+                                  territoryName=="AÃ§ores"~"South"))
+
+```
+
+***The target variable Final Mandate has 18 levels so we classified into Two category given below***
+
+1. Low - If the  Final Mandates less than  or equal to 20
+
+1. High - If the Final Mandates greater than 20
+
+
+```{r}
+ed=ed %>% mutate(FinalMandates_1=case_when(FinalMandates>=0&FinalMandates<=20~"Low",
+                                                          FinalMandates>20~"High "))
+```
+
+***Converting Two new variables into factor***
+
+```{r}
+ed$territory_region=as.factor(ed$territory_region)
+ed$FinalMandates_1=as.factor(ed$FinalMandates_1)
+```
+
+
+# Numerical Summary
+
+ ***A numerical summary is a number used to describe a specific characteristic about a data set.***
+
+***We will go over the theory and application of the following numerical summaries we have taken mean,median,standard deviation***
+
+1. Mean - The mean adds up all the data values and divides by the total number of values
+
+1. Median- This is the “middle data point”, where half of the data is below the median and half is above the median.
+
+1. Standard Deviation - Standard deviation is extensively used in statistics and data science. It measures the amount of variation or dispersion of a data set, calculating how spread out the data are from the mean. 
+
+  A "Deviation" is defined as the distance an observation lies from the reference point.
+
+***1. Count - Count the number of occurrences.***
+
+## summary of pre.subscribed Voters
+
+```{r}
+pre_subvt=ed %>%
+  group_by(FinalMandates_1) %>% summarise(avg=mean(pre.subscribedVoters),minimum=max(pre.subscribedVoters),maximum=min(pre.subscribedVoters),standard_deviation=sd(pre.subscribedVoters))
+kbl(pre_subvt) %>% kable_styling(full_width=T)
+
+```
+
+***Based on average if pre Subscribed vote increases there is a chance that final mandates will also increase***
+
+## Summary of pre.totalVoters
+
+```{r}
+pre_totvt=ed %>% 
+  group_by(FinalMandates_1) %>% summarise(avg=mean(pre.totalVoters),minimum=min(pre.totalVoters),maximum=max(pre.totalVoters),standard_deviation=sd(pre.totalVoters))
+kbl(pre_totvt) %>% kable_styling(full_width=T)
+```
+
+***Based on average values we can see that, if pre Total vote increases there is a chance that final mandates will also increase***
+
+## Summary of num parishes
+
+```{r}
+np=ed %>% 
+  group_by(FinalMandates_1) %>% summarise(avg=mean(numParishes),minimum=min(numParishes),maximum=max(numParishes),standard_deviation=sd(numParishes))
+kbl(np) %>% kable_styling(full_width=T)
+
+```
+
+***Based on average values we can see that, if numParishes increases there is a chance that final mandates will also increase***
+
+## summary of num parishes approved
+
+
+```{r}
+np_ap=ed %>% 
+  group_by(FinalMandates_1) %>% summarise(avg=mean(numParishesApproved),minimum=min(numParishesApproved),maximum=max(numParishesApproved),standard=sd(numParishesApproved))
+kbl(np_ap) %>% kable_styling(full_width=T)
+```
+
+***Based on average values we can see that, if numParishes Approved increases there is a chance that final mandates will also increase***
+
+## Summary of current subscribed Voters(2019)
+
+```{r}
+sub_per=ed %>% 
+  group_by(FinalMandates_1) %>% summarise(avg=mean(subscribedVoters),minimum=min(subscribedVoters),maximum=max(subscribedVoters),standard=sd(subscribedVoters))
+kbl(sub_per) %>% kable_styling(full_width=T)
+
+```
+
+***Based on average values we can see that, if current subscribed Voters increases there is a chance that final mandates will also increase***
+
+# correlation plots
+
+***correlation ranges from -1 to +1 , Negative values of correlation indicate that as one variable increases the other variable decreases . Positive value of correlation indicate that the one variable increase and other variable will also increase.***
+
+   ***We have selected variables which have high correlation with the Final mandates*** 
+  
+   ***The variables used for correlation plot are given below***
+   
+1. numParishes
+
+1. numParishesApproved
+
+1. totalVoters
+
+
+1. Votes
+
+```{r}
+ph11=ggpairs(ed,columns=c(6,7,14,26,28),
+        lower = list(continuous = wrap("points", 
+                                       color = "darkgreen",                                        alpha = 0.25,
+                                       size=2,
+                                       shape=5)),
+        diag = list(continuous = wrap("densityDiag", 
+                                      color = "red", 
+                                      fill="yellow")))
+ph11
+```
+
+
+# Variables taken for Numeric and Visual analyzing
+
+1. numParishes
+
+1. numParishesApproved
+
+1. totalVoters
+
+1. Votes
+
+1. Territory Region
+
+
+***All the above given variable taken analyzing lets have a look how it effects each other given below***
+
+# Visual Summary
+
+***Creating visual pictures that summarize what has been read. It shows the main idea through a visual representation.***
+
+***To create a visual picture, storyboard, diagram, or power point that summarizes what has been learned from reading text.***
+
+# Final mandate Vs territory_region
+
+```{r}
+#ed%>%
+  #group_by(territory_region) %>%
+ # do(p=plot_ly(.,  y = ~FinalMandates,color=~territory_region,colors="Set2",
+            #   type = "box")) %>%
+ # subplot(nrows = 1,  shareY = TRUE)
+ggplot(ed, aes(x =FinalMandates , y =territory_region )) +
+  geom_density_ridges(aes(fill = territory_region)) +
+  theme(legend.position = "")
+```
+
+***From the above plot we came to know that all the regions are in right skew most value lies below 20 From Final Mandates***
+
+# Final mandate_1 VS total voters
+
+```{r}
+ph2=plot_ly(ed,y=~totalVoters,type="box",color=~FinalMandates_1,colors = "Set1")
+ph2
+```
+
+***If Total voters increases, there is a chance that final mandates will also increase***
+
+#   previous total votes Vs totalMandates
+
+```{r}
+ph5=plot_ly(ed,x=~pre.totalVoters,y=~totalMandates,type="scatter",mode="markers")
+ph5
+```
+
+***From the above plot we came to  know that , if pre total voters increases total mandate is also getting increased***
+
+# numParishes Vs FinalMandates
+
+```{r}
+ggdensity(ed, x = "numParishes",
+          add = "mean",
+          color = "FinalMandates_1", fill = "FinalMandates_1",
+          palette = c("darkgreen", "yellow"))
+```
+
+***From the above plot we came to know that Final mandates is likely to be high if numparishes is increasing*** 
+
+
+# Final Note
+
+ 1. We taken Portugal election data for Analyzing in Which we found that this data is of election held on 06 October 2019 in 21 territories and 27 party participated in the election
+ 
+ 1. In this data set we have taken Final Mandate as target variable which defines the winner in election results with this variable we are going to analyze how it differs in previous election and current election
+ 
+ 1. In territories variable we have 21 territories we have categorized it into four major areas which we named as "North", "South","Central","West"
+ 
+ 1. In Final Mandate we have 18 level so we have classified into two category "Low Votes"  "High Votes" 
+
+1. some of insights are given below
+
+1. numParishes
+1. numParishesApprove
+1. pre.subscribedVoters
+1. Votes
+1. subscribedVoters
+
+
+<div class="tocify-extend-page" data-unique="tocify-extend-page" style="height: 0;"></div>
